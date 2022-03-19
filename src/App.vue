@@ -57,14 +57,16 @@ const handleMouseMove = (e: MouseEvent): void => {
   }
   // 上边界
 
-  if(moveX + distanceRight > windowWidth) {
+  if (moveX + distanceRight > windowWidth) {
     elX = windowWidth - elWidth
   }
   // 右边界
 
-  if(moveY + distanceBottom > windowHeight) {
+  if (moveY + distanceBottom > windowHeight) {
     elY = windowHeight - elHeight
   }
+  // 下边界
+
   setCoordinate(elX, elY, el)
 }
 const handleMouseUp = (e: MouseEvent): void => {
@@ -72,13 +74,16 @@ const handleMouseUp = (e: MouseEvent): void => {
 }
 
 const setCoordinate = (x: number, y: number, el: HTMLElement): void => {
-  el.style.transform = `translate(${x}px,${y}px)`
+  el.style.top = `${y}px`
+  el.style.left = `${x}px`
 }
 </script>
 
 <template>
-  <main bg="[#050505]" w="screen" h="screen" overflow="hidden">
+  <main bg="[#050505]" w="screen" h="screen" overflow="hidden" relative="~" flex="~" justify="between">
     <div
+      v-for="e of 5"
+      absolute="~"
       w="200px"
       h="200px"
       bg="dark-400"
