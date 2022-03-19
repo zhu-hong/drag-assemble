@@ -27,7 +27,7 @@ window.addEventListener('resize', () => {
 })
 
 const handleMouseDown = (e: MouseEvent): void => {
-  const el: HTMLElement = (e.target as HTMLElement)
+  const el: HTMLElement = (e.currentTarget as HTMLElement)
   const elInfo = el.getBoundingClientRect()
   elWidth = elInfo.width
   elHeight = elInfo.height
@@ -48,13 +48,15 @@ const handleMouseDown = (e: MouseEvent): void => {
 const handleMouseMove = (e: MouseEvent): void => {
   if (!inDrag) return
 
-  const el: HTMLElement = (e.target as HTMLElement)
+  const el: HTMLElement = (e.currentTarget as HTMLElement)
 
   const moveX = e.clientX
   const moveY = e.clientY
 
   elX = moveX - distanceLeft - wrapperInfo.x
-  elY = moveY - distanceTop -wrapperInfo.y
+  elY = moveY - distanceTop - wrapperInfo.y
+
+  // debugger
 
   if (elX <= 0) {
     elX = 0
@@ -71,18 +73,22 @@ const handleMouseMove = (e: MouseEvent): void => {
   }
   // 右边界
 
-  if (moveY + distanceBottom > wrapperInfo.height + wrapperInfo.y) {
+  if (moveY + distanceBottom > wrapperInfo.height + wrapperInfo.top) {
     elY = wrapperInfo.height - elHeight
   }
   // 下边界
 
   setCoordinate(elX, elY, el)
 }
-const handleMouseUp = (e: MouseEvent): void => {
+const handleMouseUp = (): void => {
+  if (!inDrag) return
   inDrag = false
 }
 
 const setCoordinate = (x: number, y: number, el: HTMLElement): void => {
+  if (el.nodeName === 'text') {
+    y += el.getBoundingClientRect().height
+  }
   el.setAttribute('transform', `translate(${x},${y})`)
 }
 </script>
@@ -97,30 +103,27 @@ const setCoordinate = (x: number, y: number, el: HTMLElement): void => {
     flex="~"
     justify="center"
   >
-    <div border="~ light-700" h="300px">
+    <div border="~ light-700" h="150mm">
       <svg
-        width="400"
-        height="300"
+        width="100%"
+        height="100%"
         version="1.1"
         xmlns="http://www.w3.org/2000/svg"
         xmlns:xlink="http://www.w3.org/1999/xlink"
-        viewBox="0 0 400 300"
+        @mouseup="handleMouseUp"
+        @mouseout="handleMouseUp"
       >
         <rect
           x="0"
           y="0"
+          transform="translate(100, 100)"
           width="100"
           height="100"
           fill="#456"
           @mousedown="handleMouseDown"
           @mousemove="handleMouseMove"
-          @mouseup="handleMouseUp"
-          @mouseout="handleMouseUp"
-          active="cursor-move"
+          hover="cursor-move"
         />
-        <text fill="#FFFFFF" font-size="16" x="100" y="100">
-          <tspan>资产编号是彩色打印机</tspan>
-        </text>
         <rect
           x="0"
           y="0"
@@ -129,11 +132,38 @@ const setCoordinate = (x: number, y: number, el: HTMLElement): void => {
           fill="#123"
           @mousedown="handleMouseDown"
           @mousemove="handleMouseMove"
-          @mouseup="handleMouseUp"
-          @mouseout="handleMouseUp"
-          active="cursor-move"
+          hover="cursor-move"
+        />
+        <text
+          fill="#123456"
+          font-size="24"
+          font-weight="900"
+          x="0"
+          y="0"
+          transform="translate(100, 100)"
+          @mousedown="handleMouseDown"
+          @mousemove="handleMouseMove"
+          hover="cursor-move"
+        >资产编号是彩色打印机</text>
+        <line
+          x1="0"
+          y1="0"
+          x2="100"
+          y2="0"
+          transform="translate(50, 50)"
+          stroke="#FFFFFF"
+          stroke-width="10"
+          stroke-linecap="square"
+          @mousedown="handleMouseDown"
+          @mousemove="handleMouseMove"
         />
       </svg>
     </div>
   </main>
 </template>
+
+<style>
+* {
+  user-select: none;
+}
+</style>
