@@ -1,5 +1,7 @@
-<script setup lang="ts">
-import { onMounted } from 'vue';
+<script lang="ts" setup>
+import { onMounted, reactive, ref, watchEffect } from 'vue'
+import { IControl } from './types'
+import { nanoid } from 'nanoid'
 
 let [
   elWidth,
@@ -19,14 +21,16 @@ let inDrag: boolean = false
 let wrapperInfo: DOMRect
 
 onMounted(() => {
-  wrapperInfo = document.querySelector('svg')!.getBoundingClientRect()
+  wrapperInfo = wrapper.value!.getBoundingClientRect()
 })
 
 window.addEventListener('resize', () => {
-  wrapperInfo = document.querySelector('svg')!.getBoundingClientRect()
+  wrapperInfo = wrapper.value!.getBoundingClientRect()
 })
 
 const handleMouseDown = (e: MouseEvent): void => {
+  currentNode = (controls.find((c) => c.attrs.id === (e.currentTarget as HTMLElement).getAttribute('id')) as IControl)
+
   const el: HTMLElement = (e.currentTarget as HTMLElement)
   const elInfo = el.getBoundingClientRect()
   elWidth = elInfo.width
@@ -78,19 +82,94 @@ const handleMouseMove = (e: MouseEvent): void => {
   }
   // 下边界
 
-  setCoordinate(elX, elY, el)
+  setCoordinate(elX, elY)
 }
-const handleMouseUp = (): void => {
+const stopCtrl = (): void => {
   if (!inDrag) return
   inDrag = false
 }
 
-const setCoordinate = (x: number, y: number, el: HTMLElement): void => {
-  if (el.nodeName === 'text') {
-    y += el.getBoundingClientRect().height
+const setCoordinate = (x: number, y: number): void => {
+  if (currentNode.type === 'text') {
+    y += document.getElementById(currentNode.attrs.id as string)!.getBoundingClientRect().height
   }
-  el.setAttribute('transform', `translate(${x},${y})`)
+  currentNode.attrs['transform'] = `translate(${x}, ${y})`
 }
+
+const wrapperSize: { width: number, height: number } = reactive({
+  width: 600,
+  height: 400,
+})
+
+const wrapper = ref<HTMLInputElement | null>(null)
+let currentNode: IControl
+
+const controls = reactive<IControl[]>([
+  {
+    type: 'rect',
+    attrs: {
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 100,
+      fill: '#000c25',
+      id: nanoid(),
+    },
+  },
+  {
+    type: 'rect',
+    attrs: {
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 100,
+      transform: 'translate(100, 100)',
+      fill: '#000c25',
+      id: nanoid(),
+    },
+  },
+  {
+    type: 'text',
+    attrs: {
+      id: nanoid(),
+      x: 0,
+      y: 0,
+      transform: 'translate(300, 200)',
+      'font-size': 32,
+      'font-weight': 500,
+      text: 'zhu-hong',
+      fill: '#FFFFFF',
+    },
+  },
+])
+
+watchEffect(() => {
+  controls.forEach((c) => {
+    let node = document.getElementById(c.attrs.id as string)
+    if(node) {
+      Object.keys(c.attrs).forEach((k) => {
+        if(k === 'text') {
+          node!.textContent = c.attrs[k] as string
+        }
+        node?.setAttribute(k, c.attrs[k] as string)
+      })
+    } else {
+      const eln = document.createElementNS('http://www.w3.org/2000/svg', c.type)
+      Object.keys(c.attrs).forEach((k) => {
+        if(k === 'text') {
+          eln!.textContent = c.attrs[k] as string
+        }
+        eln.setAttribute(k, c.attrs[k] as string)
+      })
+  
+      eln.addEventListener('mousedown', handleMouseDown)
+      eln.addEventListener('mousemove', handleMouseMove)
+  
+      wrapper.value?.append(eln)
+    }
+
+  })
+})
 </script>
 
 <template>
@@ -98,66 +177,25 @@ const setCoordinate = (x: number, y: number, el: HTMLElement): void => {
     bg="[#050505]"
     w="screen"
     h="screen"
-    overflow="hidden"
-    relative="~"
     flex="~"
-    justify="center"
+    justify="between"
+    overflow="auto"
   >
-    <div border="~ light-700" h="150mm">
-      <svg
-        width="100%"
-        height="100%"
-        version="1.1"
-        xmlns="http://www.w3.org/2000/svg"
-        xmlns:xlink="http://www.w3.org/1999/xlink"
-        @mouseup="handleMouseUp"
-        @mouseout="handleMouseUp"
-      >
-        <rect
-          x="0"
-          y="0"
-          transform="translate(100, 100)"
-          width="100"
-          height="100"
-          fill="#456"
-          @mousedown="handleMouseDown"
-          @mousemove="handleMouseMove"
-          hover="cursor-move"
-        />
-        <rect
-          x="0"
-          y="0"
-          width="100"
-          height="100"
-          fill="#123"
-          @mousedown="handleMouseDown"
-          @mousemove="handleMouseMove"
-          hover="cursor-move"
-        />
-        <text
-          fill="#123456"
-          font-size="24"
-          font-weight="900"
-          x="0"
-          y="0"
-          transform="translate(100, 100)"
-          @mousedown="handleMouseDown"
-          @mousemove="handleMouseMove"
-          hover="cursor-move"
-        >资产编号是彩色打印机</text>
-        <line
-          x1="0"
-          y1="0"
-          x2="100"
-          y2="0"
-          transform="translate(50, 50)"
-          stroke="#FFFFFF"
-          stroke-width="10"
-          stroke-linecap="square"
-          @mousedown="handleMouseDown"
-          @mousemove="handleMouseMove"
-        />
-      </svg>
+    <div w="260px" border="r gray-900" flex="~ col none"></div>
+    <div flex="1 ~ none" justify="center" align="items-center" w="min-800px">
+      <div :style="{width: `${wrapperSize.width}px`, height: `${wrapperSize.height}px`,}" shadow="~ dark-900 lg">
+        <svg
+          width="100%"
+          height="100%"
+          version="1.1"
+          xmlns="http://www.w3.org/2000/svg"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          @mouseup="stopCtrl"
+          @mouseout="stopCtrl"
+          ref="wrapper"
+        >
+        </svg>
+      </div>
     </div>
   </main>
 </template>
